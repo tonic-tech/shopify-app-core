@@ -13,6 +13,8 @@ declare const BaseEnvSchema: z.ZodObject<{
     SHOP_CUSTOM_DOMAIN: z.ZodOptional<z.ZodString>;
     SENTRY_DSN: z.ZodOptional<z.ZodString>;
     REDIS_URL: z.ZodOptional<z.ZodString>;
+    TONIC_AUTH_BASE_URL: z.ZodOptional<z.ZodString>;
+    TONIC_LINK_API_SECRET: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     SHOPIFY_API_KEY: string;
     SHOPIFY_API_SECRET: string;
@@ -24,6 +26,8 @@ declare const BaseEnvSchema: z.ZodObject<{
     SHOP_CUSTOM_DOMAIN?: string | undefined;
     SENTRY_DSN?: string | undefined;
     REDIS_URL?: string | undefined;
+    TONIC_AUTH_BASE_URL?: string | undefined;
+    TONIC_LINK_API_SECRET?: string | undefined;
 }, {
     SHOPIFY_API_KEY: string;
     SHOPIFY_API_SECRET: string;
@@ -35,6 +39,8 @@ declare const BaseEnvSchema: z.ZodObject<{
     SHOP_CUSTOM_DOMAIN?: string | undefined;
     SENTRY_DSN?: string | undefined;
     REDIS_URL?: string | undefined;
+    TONIC_AUTH_BASE_URL?: string | undefined;
+    TONIC_LINK_API_SECRET?: string | undefined;
 }>;
 export type BaseEnv = z.infer<typeof BaseEnvSchema>;
 /**
@@ -59,6 +65,8 @@ export declare function createEnvValidator<T extends ZodRawShape>(extraSchema?: 
         SHOP_CUSTOM_DOMAIN?: string | undefined;
         SENTRY_DSN?: string | undefined;
         REDIS_URL?: string | undefined;
+        TONIC_AUTH_BASE_URL?: string | undefined;
+        TONIC_LINK_API_SECRET?: string | undefined;
     } | (z.objectUtil.addQuestionMarks<z.baseObjectOutputType<z.objectUtil.extendShape<{
         SHOPIFY_API_KEY: z.ZodString;
         SHOPIFY_API_SECRET: z.ZodString;
@@ -70,6 +78,8 @@ export declare function createEnvValidator<T extends ZodRawShape>(extraSchema?: 
         SHOP_CUSTOM_DOMAIN: z.ZodOptional<z.ZodString>;
         SENTRY_DSN: z.ZodOptional<z.ZodString>;
         REDIS_URL: z.ZodOptional<z.ZodString>;
+        TONIC_AUTH_BASE_URL: z.ZodOptional<z.ZodString>;
+        TONIC_LINK_API_SECRET: z.ZodOptional<z.ZodString>;
     }, T>>, any> extends infer T_1 ? { [k in keyof T_1]: T_1[k]; } : never);
     getEnv: () => {
         SHOPIFY_API_KEY: string;
@@ -82,6 +92,8 @@ export declare function createEnvValidator<T extends ZodRawShape>(extraSchema?: 
         SHOP_CUSTOM_DOMAIN?: string | undefined;
         SENTRY_DSN?: string | undefined;
         REDIS_URL?: string | undefined;
+        TONIC_AUTH_BASE_URL?: string | undefined;
+        TONIC_LINK_API_SECRET?: string | undefined;
     } | (z.objectUtil.addQuestionMarks<z.baseObjectOutputType<z.objectUtil.extendShape<{
         SHOPIFY_API_KEY: z.ZodString;
         SHOPIFY_API_SECRET: z.ZodString;
@@ -93,6 +105,8 @@ export declare function createEnvValidator<T extends ZodRawShape>(extraSchema?: 
         SHOP_CUSTOM_DOMAIN: z.ZodOptional<z.ZodString>;
         SENTRY_DSN: z.ZodOptional<z.ZodString>;
         REDIS_URL: z.ZodOptional<z.ZodString>;
+        TONIC_AUTH_BASE_URL: z.ZodOptional<z.ZodString>;
+        TONIC_LINK_API_SECRET: z.ZodOptional<z.ZodString>;
     }, T>>, any> extends infer T_1 ? { [k in keyof T_1]: T_1[k]; } : never);
     isProduction: () => boolean;
     isDevelopment: () => boolean;
@@ -108,6 +122,8 @@ export declare const validateEnv: () => {
     SHOP_CUSTOM_DOMAIN?: string | undefined;
     SENTRY_DSN?: string | undefined;
     REDIS_URL?: string | undefined;
+    TONIC_AUTH_BASE_URL?: string | undefined;
+    TONIC_LINK_API_SECRET?: string | undefined;
 } | {
     [x: string]: any;
 };
@@ -122,6 +138,8 @@ export declare const getEnv: () => {
     SHOP_CUSTOM_DOMAIN?: string | undefined;
     SENTRY_DSN?: string | undefined;
     REDIS_URL?: string | undefined;
+    TONIC_AUTH_BASE_URL?: string | undefined;
+    TONIC_LINK_API_SECRET?: string | undefined;
 } | {
     [x: string]: any;
 };

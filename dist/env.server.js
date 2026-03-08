@@ -13,6 +13,8 @@ const BaseEnvSchema = z.object({
     SHOP_CUSTOM_DOMAIN: z.string().optional(),
     SENTRY_DSN: z.string().optional(),
     REDIS_URL: z.string().optional(),
+    TONIC_AUTH_BASE_URL: z.string().url().optional(),
+    TONIC_LINK_API_SECRET: z.string().optional(),
 });
 /**
  * Create an env validator that extends the base schema with app-specific vars

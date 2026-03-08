@@ -14,6 +14,8 @@ export { SECURITY_HEADERS, addSecurityHeaders, createSecureHeaders, getCSPHeader
 export { SubscriptionPayloadSchema, GDPRPayloadSchema, ChargeIdSchema, validateChargeId, createPlanValidator, validateSubscriptionPayload, validateGDPRPayload, } from "./validation.server.js";
 // Metafields
 export { syncPlanMetafield, clearPlanMetafield, createMetafieldDefinitions, } from "./metafields.server.js";
+// Tonic Account Linking
+export { TonicLinkClient } from "./tonic-link.server.js";
 // Handler Factories
 export { createHealthLoader, createGDPRAction, createUninstallAction, createSubscriptionAction, } from "./handlers/index.js";
 //# sourceMappingURL=index.js.map

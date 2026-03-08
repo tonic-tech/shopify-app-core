@@ -64,6 +64,15 @@ export {
   createMetafieldDefinitions,
 } from "./metafields.server.js";
 
+// Tonic Account Linking
+export { TonicLinkClient } from "./tonic-link.server.js";
+export type {
+  TonicLinkStatus,
+  TonicLinkInitiateResponse,
+  TonicAppInstallReport,
+  TonicShopOverview,
+} from "./tonic-link.types.js";
+
 // Handler Factories
 export {
   createHealthLoader,
