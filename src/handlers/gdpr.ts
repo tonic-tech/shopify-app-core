@@ -18,6 +18,10 @@ export interface GDPROps {
   deleteShop: (shopDomain: string) => Promise<void>;
   /** Delete all sessions for a shop domain. */
   deleteSessions: (shop: string) => Promise<void>;
+  /** Delete or anonymize all PII for a specific customer. Optional per-app. */
+  deleteCustomerData?: (shopDomain: string, customerId: string, customerEmail: string) => Promise<void>;
+  /** Return all stored data for a specific customer. Optional per-app. */
+  getCustomerData?: (shopDomain: string, customerId: string, customerEmail: string) => Promise<unknown[]>;
 }
 
 /**
@@ -62,6 +66,21 @@ export function createGDPRAction(
           shopDomain: shop,
           customerEmail: gdprPayload.customer?.email,
         });
+        if (ops.getCustomerData && gdprPayload.customer) {
+          try {
+            const data = await ops.getCustomerData(
+              shop,
+              String(gdprPayload.customer.id),
+              gdprPayload.customer.email,
+            );
+            logger.info("Customer data retrieved", {
+              shopDomain: shop,
+              recordCount: data.length,
+            });
+          } catch (error) {
+            logger.error("Failed to retrieve customer data", error, { shopDomain: shop });
+          }
+        }
         break;
 
       case "CUSTOMERS_REDACT":
@@ -69,6 +88,18 @@ export function createGDPRAction(
           shopDomain: shop,
           customerEmail: gdprPayload.customer?.email,
         });
+        if (ops.deleteCustomerData && gdprPayload.customer) {
+          try {
+            await ops.deleteCustomerData(
+              shop,
+              String(gdprPayload.customer.id),
+              gdprPayload.customer.email,
+            );
+            logger.info("Customer data deleted", { shopDomain: shop });
+          } catch (error) {
+            logger.error("Failed to delete customer data", error, { shopDomain: shop });
+          }
+        }
         break;
 
       case "SHOP_REDACT":

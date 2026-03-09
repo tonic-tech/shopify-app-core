@@ -14,8 +14,8 @@ describe("SECURITY_HEADERS", () => {
     expect(SECURITY_HEADERS["X-Content-Type-Options"]).toBe("nosniff");
   });
 
-  it("contains X-Frame-Options set to SAMEORIGIN", () => {
-    expect(SECURITY_HEADERS["X-Frame-Options"]).toBe("SAMEORIGIN");
+  it("does not contain X-Frame-Options (removed for Shopify iframe compatibility)", () => {
+    expect(SECURITY_HEADERS["X-Frame-Options"]).toBeUndefined();
   });
 
   it("contains X-XSS-Protection", () => {
@@ -35,8 +35,8 @@ describe("SECURITY_HEADERS", () => {
     expect(SECURITY_HEADERS["X-DNS-Prefetch-Control"]).toBe("on");
   });
 
-  it("has exactly 6 headers", () => {
-    expect(Object.keys(SECURITY_HEADERS)).toHaveLength(6);
+  it("has exactly 5 headers", () => {
+    expect(Object.keys(SECURITY_HEADERS)).toHaveLength(5);
   });
 });
 

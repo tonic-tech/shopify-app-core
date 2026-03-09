@@ -4,7 +4,8 @@
 
 export const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "SAMEORIGIN",
+  // X-Frame-Options removed: conflicts with Shopify iframe embedding.
+  // CSP frame-ancestors directive in getCSPHeader() is the modern replacement.
   "X-XSS-Protection": "1; mode=block",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "geolocation=(), microphone=(), camera=(), payment=(self)",
