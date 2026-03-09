@@ -1,4 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
+import type { TonicLinkClient } from "../tonic-link.server.js";
+import type { TonicAppName } from "../tonic-link.types.js";
 interface WebhookAuth {
     webhook: (request: Request) => Promise<{
         topic: string;
@@ -39,6 +41,8 @@ interface UnauthAdmin {
 export declare function createSubscriptionAction<T extends string>(authenticate: WebhookAuth, unauthenticated: UnauthAdmin, prisma: PrismaClient, options: {
     planNames: readonly T[];
     namespace: string;
+    appName?: TonicAppName;
+    tonicLink?: TonicLinkClient;
 }): ({ request }: {
     request: Request;
 }) => Promise<Response>;

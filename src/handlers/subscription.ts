@@ -1,4 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
+import type { TonicLinkClient } from "../tonic-link.server.js";
+import type { TonicAppName } from "../tonic-link.types.js";
 import { validateSubscriptionPayload, createPlanValidator } from "../validation.server.js";
 import { syncPlanMetafield } from "../metafields.server.js";
 import { logger } from "../logger.server.js";
@@ -47,6 +49,8 @@ export function createSubscriptionAction<T extends string>(
   options: {
     planNames: readonly T[];
     namespace: string;
+    appName?: TonicAppName;
+    tonicLink?: TonicLinkClient;
   }
 ) {
   const { validatePlan } = createPlanValidator(options.planNames);
@@ -99,6 +103,16 @@ export function createSubscriptionAction<T extends string>(
       logger.info("Synced plan metafield", { shopDomain: shop, plan });
     } catch (error) {
       logger.error("Failed to sync metafield", error, { shopDomain: shop });
+    }
+
+    // Report plan change to Tonic (best-effort, non-blocking)
+    if (options.tonicLink?.configured && options.appName) {
+      try {
+        await options.tonicLink.reportPlanChange(shop, options.appName, plan, status);
+        logger.info("Reported plan change to Tonic", { shopDomain: shop, appName: options.appName, plan });
+      } catch (error) {
+        logger.error("Failed to report plan change to Tonic", error, { shopDomain: shop, appName: options.appName });
+      }
     }
 
     logger.webhook(topic, shop, "processed", { plan });

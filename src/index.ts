@@ -67,10 +67,11 @@ export {
 // Tonic Account Linking
 export { TonicLinkClient } from "./tonic-link.server.js";
 export type {
+  TonicAppName,
+  TonicAppStatus,
   TonicLinkStatus,
-  TonicLinkInitiateResponse,
-  TonicAppInstallReport,
-  TonicShopOverview,
+  TonicRegisterOrLinkResponse,
+  TonicReportResponse,
 } from "./tonic-link.types.js";
 
 // Handler Factories

@@ -1,4 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
+import type { TonicLinkClient } from "../tonic-link.server.js";
+import type { TonicAppName } from "../tonic-link.types.js";
 interface WebhookAuth {
     webhook: (request: Request) => Promise<{
         topic: string;
@@ -29,6 +31,8 @@ interface WebhookAuth {
  */
 export declare function createUninstallAction(authenticate: WebhookAuth, prisma: PrismaClient, options?: {
     onBeforeDelete?: (shop: string) => Promise<void>;
+    appName?: TonicAppName;
+    tonicLink?: TonicLinkClient;
 }): ({ request }: {
     request: Request;
 }) => Promise<Response>;

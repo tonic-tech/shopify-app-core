@@ -68,6 +68,16 @@ export function createSubscriptionAction(authenticate, unauthenticated, prisma, 
         catch (error) {
             logger.error("Failed to sync metafield", error, { shopDomain: shop });
         }
+        // Report plan change to Tonic (best-effort, non-blocking)
+        if (options.tonicLink?.configured && options.appName) {
+            try {
+                await options.tonicLink.reportPlanChange(shop, options.appName, plan, status);
+                logger.info("Reported plan change to Tonic", { shopDomain: shop, appName: options.appName, plan });
+            }
+            catch (error) {
+                logger.error("Failed to report plan change to Tonic", error, { shopDomain: shop, appName: options.appName });
+            }
+        }
         logger.webhook(topic, shop, "processed", { plan });
         return new Response(null, { status: 200 });
     };

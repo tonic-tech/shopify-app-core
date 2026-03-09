@@ -35,6 +35,16 @@ export function createUninstallAction(authenticate, prisma, options) {
             return new Response("Invalid shop domain", { status: 400 });
         }
         logger.webhook(topic, shop, "received");
+        // Report uninstall to Tonic (best-effort, non-blocking)
+        if (options?.tonicLink?.configured && options?.appName) {
+            try {
+                await options.tonicLink.reportUninstall(shop, options.appName);
+                logger.info("Reported uninstall to Tonic", { shopDomain: shop, appName: options.appName });
+            }
+            catch (error) {
+                logger.error("Failed to report uninstall to Tonic", error, { shopDomain: shop, appName: options.appName });
+            }
+        }
         // App-specific cleanup before deletion
         if (options?.onBeforeDelete) {
             try {
