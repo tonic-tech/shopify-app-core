@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 interface WebhookAuth {
     webhook: (request: Request) => Promise<{
         topic: string;
@@ -7,22 +6,37 @@ interface WebhookAuth {
     }>;
 }
 /**
- * Create a GDPR webhook action handler
+ * Database operations required by the GDPR handler.
+ * Implement these with your ORM of choice.
+ */
+export interface GDPROps {
+    /** Delete all shop data by domain. Should not throw if shop doesn't exist. */
+    deleteShop: (shopDomain: string) => Promise<void>;
+    /** Delete all sessions for a shop domain. */
+    deleteSessions: (shop: string) => Promise<void>;
+}
+/**
+ * Create a GDPR webhook action handler.
  *
  * Handles: CUSTOMERS_DATA_REQUEST, CUSTOMERS_REDACT, SHOP_REDACT
- * Always returns 200 to Shopify (idempotent)
+ * Always returns 200 to Shopify (idempotent).
  *
  * @example
  * ```ts
- * // app/routes/webhooks.gdpr.tsx
- * import { authenticate } from "~/shopify.server";
- * import prisma from "~/db.server";
- * import { createGDPRAction } from "@tonic/shopify-app-core/handlers";
+ * // Drizzle
+ * export const action = createGDPRAction(authenticate, {
+ *   deleteShop: (shop) => db.delete(shops).where(eq(shops.shopDomain, shop)).then(() => {}),
+ *   deleteSessions: (shop) => db.delete(sessions).where(eq(sessions.shop, shop)).then(() => {}),
+ * });
  *
- * export const action = createGDPRAction(authenticate, prisma);
+ * // Prisma
+ * export const action = createGDPRAction(authenticate, {
+ *   deleteShop: (shop) => prisma.shop.delete({ where: { shopDomain: shop } }).catch(() => {}),
+ *   deleteSessions: (shop) => prisma.session.deleteMany({ where: { shop } }).then(() => {}),
+ * });
  * ```
  */
-export declare function createGDPRAction(authenticate: WebhookAuth, prisma: PrismaClient): ({ request }: {
+export declare function createGDPRAction(authenticate: WebhookAuth, ops: GDPROps): ({ request }: {
     request: Request;
 }) => Promise<Response>;
 export {};

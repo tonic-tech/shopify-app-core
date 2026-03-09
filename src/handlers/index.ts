@@ -1,4 +1,4 @@
-export { createHealthLoader } from "./health.js";
-export { createGDPRAction } from "./gdpr.js";
-export { createUninstallAction } from "./uninstall.js";
-export { createSubscriptionAction } from "./subscription.js";
+export { createHealthLoader, type HealthOps } from "./health.js";
+export { createGDPRAction, type GDPROps } from "./gdpr.js";
+export { createUninstallAction, type UninstallOps } from "./uninstall.js";
+export { createSubscriptionAction, type SubscriptionOps } from "./subscription.js";

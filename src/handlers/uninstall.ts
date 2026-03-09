@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 import type { TonicLinkClient } from "../tonic-link.server.js";
 import type { TonicAppName } from "../tonic-link.types.js";
 import { logger } from "../logger.server.js";
@@ -8,6 +7,17 @@ interface WebhookAuth {
     topic: string;
     shop: string;
   }>;
+}
+
+/**
+ * Database operations required by the uninstall handler.
+ * Implement these with your ORM of choice (Drizzle, Prisma, raw SQL).
+ */
+export interface UninstallOps {
+  /** Delete the shop record by domain. Should not throw if shop doesn't exist. */
+  deleteShop: (shopDomain: string) => Promise<void>;
+  /** Delete all sessions for a shop domain. */
+  deleteSessions: (shop: string) => Promise<void>;
 }
 
 function isValidShopDomain(shop: string): boolean {
@@ -20,30 +30,31 @@ function isValidShopDomain(shop: string): boolean {
 }
 
 /**
- * Create an app uninstall webhook handler
- *
- * @param onBeforeDelete - Optional hook for app-specific cleanup (e.g., GTM removal)
+ * Create an app uninstall webhook handler.
  *
  * @example
  * ```ts
- * // app/routes/webhooks.app.uninstalled.tsx
- * import { authenticate } from "~/shopify.server";
- * import prisma from "~/db.server";
+ * // Drizzle
+ * import { db, shops, sessions } from "~/db";
+ * import { eq } from "drizzle-orm";
  * import { createUninstallAction } from "@tonic/shopify-app-core/handlers";
  *
- * export const action = createUninstallAction(authenticate, prisma);
+ * export const action = createUninstallAction(authenticate, {
+ *   deleteShop: (shop) => db.delete(shops).where(eq(shops.shopDomain, shop)).then(() => {}),
+ *   deleteSessions: (shop) => db.delete(sessions).where(eq(sessions.shop, shop)).then(() => {}),
+ * }, { appName: "tracktonic", tonicLink });
  *
- * // With app-specific cleanup:
- * export const action = createUninstallAction(authenticate, prisma, {
- *   onBeforeDelete: async (shop) => {
- *     await removeGTMFromThemes(shop);
- *   },
- * });
+ * // Prisma
+ * import prisma from "~/db.server";
+ * export const action = createUninstallAction(authenticate, {
+ *   deleteShop: (shop) => prisma.shop.delete({ where: { shopDomain: shop } }).catch(() => {}),
+ *   deleteSessions: (shop) => prisma.session.deleteMany({ where: { shop } }).then(() => {}),
+ * }, { appName: "blocktonic", tonicLink });
  * ```
  */
 export function createUninstallAction(
   authenticate: WebhookAuth,
-  prisma: PrismaClient,
+  ops: UninstallOps,
   options?: {
     onBeforeDelete?: (shop: string) => Promise<void>;
     appName?: TonicAppName;
@@ -79,21 +90,19 @@ export function createUninstallAction(
       }
     }
 
+    // Delete shop record
     try {
-      await prisma.shop.delete({ where: { shopDomain: shop } });
+      await ops.deleteShop(shop);
       logger.info("Deleted shop record", { shopDomain: shop });
-    } catch (error: unknown) {
-      if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
-        logger.info("Shop not found (idempotent webhook)", { shopDomain: shop });
-      } else {
-        logger.error("Database error deleting shop", error, { shopDomain: shop });
-        return new Response("Database error", { status: 500 });
-      }
+    } catch (error) {
+      logger.error("Database error deleting shop", error, { shopDomain: shop });
+      return new Response("Database error", { status: 500 });
     }
 
+    // Delete sessions
     try {
-      const result = await prisma.session.deleteMany({ where: { shop } });
-      logger.info("Deleted sessions", { shopDomain: shop, count: result.count });
+      await ops.deleteSessions(shop);
+      logger.info("Deleted sessions", { shopDomain: shop });
     } catch (error) {
       logger.error("Failed to delete sessions", error, { shopDomain: shop });
     }

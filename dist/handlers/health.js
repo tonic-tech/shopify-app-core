@@ -1,20 +1,24 @@
 import { json } from "@remix-run/node";
 /**
- * Create a health check loader with DB connectivity check
+ * Create a health check loader with DB connectivity check.
  *
  * @example
  * ```ts
- * // app/routes/health.tsx
- * import prisma from "~/db.server";
+ * // Drizzle
+ * import { db } from "~/db";
+ * import { sql } from "drizzle-orm";
  * import { createHealthLoader } from "@tonic/shopify-app-core/handlers";
+ * export const loader = createHealthLoader({ ping: () => db.execute(sql`SELECT 1`).then(() => {}) });
  *
- * export const loader = createHealthLoader(prisma);
+ * // Prisma
+ * import prisma from "~/db.server";
+ * export const loader = createHealthLoader({ ping: () => prisma.$queryRaw`SELECT 1`.then(() => {}) });
  * ```
  */
-export function createHealthLoader(prisma) {
+export function createHealthLoader(ops) {
     return async () => {
         try {
-            await prisma.$queryRaw `SELECT 1`;
+            await ops.ping();
             return json({
                 status: "healthy",
                 timestamp: new Date().toISOString(),

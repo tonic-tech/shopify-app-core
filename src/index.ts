@@ -1,6 +1,3 @@
-// Database
-export { createPrismaClient } from "./db.server.js";
-
 // Environment
 export {
   createEnvValidator,
@@ -80,4 +77,8 @@ export {
   createGDPRAction,
   createUninstallAction,
   createSubscriptionAction,
+  type HealthOps,
+  type GDPROps,
+  type UninstallOps,
+  type SubscriptionOps,
 } from "./handlers/index.js";

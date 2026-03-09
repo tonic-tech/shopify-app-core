@@ -1,5 +1,3 @@
-// Database
-export { createPrismaClient } from "./db.server.js";
 // Environment
 export { createEnvValidator, validateEnv, getEnv, isProduction, isDevelopment, } from "./env.server.js";
 // Logging

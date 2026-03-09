@@ -2,27 +2,34 @@ import { validateSubscriptionPayload, createPlanValidator } from "../validation.
 import { syncPlanMetafield } from "../metafields.server.js";
 import { logger } from "../logger.server.js";
 /**
- * Create a subscription webhook handler
- *
- * @param planNames - Valid paid plan names for this app (e.g., ["BUILD", "OPTIMIZE", "ENTERPRISE"])
- * @param namespace - Metafield namespace for plan sync (e.g., "blocktonic")
+ * Create a subscription webhook handler.
  *
  * @example
  * ```ts
- * // app/routes/webhooks.subscription.tsx
- * import { authenticate, unauthenticated } from "~/shopify.server";
- * import prisma from "~/db.server";
- * import { createSubscriptionAction } from "@tonic/shopify-app-core/handlers";
+ * // Drizzle
+ * import { db, shops } from "~/db";
+ * import { eq } from "drizzle-orm";
  *
- * export const action = createSubscriptionAction(
- *   authenticate,
- *   unauthenticated,
- *   prisma,
- *   { planNames: ["BUILD", "OPTIMIZE", "ENTERPRISE"], namespace: "blocktonic" }
- * );
+ * export const action = createSubscriptionAction(authenticate, unauthenticated, {
+ *   upsertShopPlan: async (shop, data) => {
+ *     await db.insert(shops).values({ shopDomain: shop, ...data })
+ *       .onConflictDoUpdate({ target: shops.shopDomain, set: data });
+ *   },
+ * }, { planNames: ["PRO"], namespace: "tracktonic" });
+ *
+ * // Prisma
+ * export const action = createSubscriptionAction(authenticate, unauthenticated, {
+ *   upsertShopPlan: async (shop, data) => {
+ *     await prisma.shop.upsert({
+ *       where: { shopDomain: shop },
+ *       update: data,
+ *       create: { shopDomain: shop, ...data },
+ *     });
+ *   },
+ * }, { planNames: ["BUILD", "OPTIMIZE", "ENTERPRISE"], namespace: "blocktonic" });
  * ```
  */
-export function createSubscriptionAction(authenticate, unauthenticated, prisma, options) {
+export function createSubscriptionAction(authenticate, unauthenticated, ops, options) {
     const { validatePlan } = createPlanValidator(options.planNames);
     return async ({ request }) => {
         const { shop, payload, topic } = await authenticate.webhook(request);
@@ -39,19 +46,10 @@ export function createSubscriptionAction(authenticate, unauthenticated, prisma, 
         const { name, status, admin_graphql_api_id } = validatedPayload.app_subscription;
         const plan = status === "ACTIVE" ? validatePlan(name) : "FREE";
         try {
-            await prisma.shop.upsert({
-                where: { shopDomain: shop },
-                update: {
-                    plan,
-                    subscriptionId: admin_graphql_api_id,
-                    subscriptionStatus: status,
-                },
-                create: {
-                    shopDomain: shop,
-                    plan,
-                    subscriptionId: admin_graphql_api_id,
-                    subscriptionStatus: status,
-                },
+            await ops.upsertShopPlan(shop, {
+                plan,
+                subscriptionId: admin_graphql_api_id,
+                subscriptionStatus: status,
             });
             logger.billing("subscription_updated", shop, plan, { status });
         }
