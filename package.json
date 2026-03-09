@@ -20,7 +20,9 @@
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "prepare": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "files": [
     "dist",
@@ -42,6 +44,7 @@
     "@remix-run/node": "^2.17.0",
     "@types/node": "^22.9.3",
     "typescript": "^5.7.0",
+    "vitest": "^4.0.18",
     "zod": "^3.23.0"
   },
   "author": "Tonic Tech",
