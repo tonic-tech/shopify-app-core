@@ -3,7 +3,6 @@
  */
 export declare const SECURITY_HEADERS: {
     readonly "X-Content-Type-Options": "nosniff";
-    readonly "X-Frame-Options": "SAMEORIGIN";
     readonly "X-XSS-Protection": "1; mode=block";
     readonly "Referrer-Policy": "strict-origin-when-cross-origin";
     readonly "Permissions-Policy": "geolocation=(), microphone=(), camera=(), payment=(self)";

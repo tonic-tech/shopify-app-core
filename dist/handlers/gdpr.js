@@ -36,12 +36,33 @@ export function createGDPRAction(authenticate, ops) {
                     shopDomain: shop,
                     customerEmail: gdprPayload.customer?.email,
                 });
+                if (ops.getCustomerData && gdprPayload.customer) {
+                    try {
+                        const data = await ops.getCustomerData(shop, String(gdprPayload.customer.id), gdprPayload.customer.email);
+                        logger.info("Customer data retrieved", {
+                            shopDomain: shop,
+                            recordCount: data.length,
+                        });
+                    }
+                    catch (error) {
+                        logger.error("Failed to retrieve customer data", error, { shopDomain: shop });
+                    }
+                }
                 break;
             case "CUSTOMERS_REDACT":
                 logger.info("Customer redact request", {
                     shopDomain: shop,
                     customerEmail: gdprPayload.customer?.email,
                 });
+                if (ops.deleteCustomerData && gdprPayload.customer) {
+                    try {
+                        await ops.deleteCustomerData(shop, String(gdprPayload.customer.id), gdprPayload.customer.email);
+                        logger.info("Customer data deleted", { shopDomain: shop });
+                    }
+                    catch (error) {
+                        logger.error("Failed to delete customer data", error, { shopDomain: shop });
+                    }
+                }
                 break;
             case "SHOP_REDACT":
                 logger.info("Shop redact request", { shopDomain: shop });

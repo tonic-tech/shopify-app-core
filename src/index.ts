@@ -71,6 +71,26 @@ export type {
   TonicReportResponse,
 } from "./tonic-link.types.js";
 
+// Billing
+export {
+  createBillingConfig,
+  requirePlan,
+  createChargeConfirmationLoader,
+  createUsageRecord,
+} from "./billing/index.js";
+export type {
+  BillingInterval,
+  PlanDefinition,
+  ResolvedPlan,
+  BillingConfig,
+  RequirePlanOptions,
+  PlanCheckResult,
+  ChargeConfirmationOps,
+  ChargeConfirmationOptions,
+  UsageRecordInput,
+  UsageRecordResult,
+} from "./billing/index.js";
+
 // Handler Factories
 export {
   createHealthLoader,

@@ -1,6 +1,6 @@
 {
   "name": "@tonic/shopify-app-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared utilities for Tonic Shopify apps (ORM-agnostic)",
   "type": "module",
   "main": "dist/index.js",
@@ -13,6 +13,10 @@
     "./handlers": {
       "import": "./dist/handlers/index.js",
       "types": "./dist/handlers/index.d.ts"
+    },
+    "./billing": {
+      "import": "./dist/billing/index.js",
+      "types": "./dist/billing/index.d.ts"
     }
   },
   "scripts": {

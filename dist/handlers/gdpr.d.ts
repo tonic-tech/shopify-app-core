@@ -14,6 +14,10 @@ export interface GDPROps {
     deleteShop: (shopDomain: string) => Promise<void>;
     /** Delete all sessions for a shop domain. */
     deleteSessions: (shop: string) => Promise<void>;
+    /** Delete or anonymize all PII for a specific customer. Optional per-app. */
+    deleteCustomerData?: (shopDomain: string, customerId: string, customerEmail: string) => Promise<void>;
+    /** Return all stored data for a specific customer. Optional per-app. */
+    getCustomerData?: (shopDomain: string, customerId: string, customerEmail: string) => Promise<unknown[]>;
 }
 /**
  * Create a GDPR webhook action handler.

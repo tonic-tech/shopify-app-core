@@ -46,6 +46,25 @@ export function createUninstallAction(authenticate, ops, options) {
                 logger.error("Failed to report uninstall to Tonic", error, { shopDomain: shop, appName: options.appName });
             }
         }
+        // Report FREE plan to Tonic (since APP_SUBSCRIPTIONS_UPDATE doesn't fire on uninstall)
+        if (options?.tonicLink?.configured && options?.appName) {
+            try {
+                await options.tonicLink.reportPlanChange(shop, options.appName, "FREE", "CANCELLED");
+            }
+            catch (error) {
+                logger.error("Failed to report FREE plan on uninstall", error, { shopDomain: shop });
+            }
+        }
+        // Billing cleanup (best-effort, before shop deletion)
+        if (ops.onBillingCleanup) {
+            try {
+                await ops.onBillingCleanup(shop);
+                logger.billing("uninstall_billing_cleanup", shop, "FREE");
+            }
+            catch (error) {
+                logger.error("Billing cleanup failed", error, { shopDomain: shop });
+            }
+        }
         // App-specific cleanup before deletion
         if (options?.onBeforeDelete) {
             try {

@@ -15,6 +15,8 @@ export interface UninstallOps {
     deleteShop: (shopDomain: string) => Promise<void>;
     /** Delete all sessions for a shop domain. */
     deleteSessions: (shop: string) => Promise<void>;
+    /** Optional: clean up billing state before shop deletion (APP_SUBSCRIPTIONS_UPDATE doesn't fire on uninstall). */
+    onBillingCleanup?: (shopDomain: string) => Promise<void>;
 }
 /**
  * Create an app uninstall webhook handler.

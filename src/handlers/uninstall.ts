@@ -18,6 +18,8 @@ export interface UninstallOps {
   deleteShop: (shopDomain: string) => Promise<void>;
   /** Delete all sessions for a shop domain. */
   deleteSessions: (shop: string) => Promise<void>;
+  /** Optional: clean up billing state before shop deletion (APP_SUBSCRIPTIONS_UPDATE doesn't fire on uninstall). */
+  onBillingCleanup?: (shopDomain: string) => Promise<void>;
 }
 
 function isValidShopDomain(shop: string): boolean {
@@ -78,6 +80,25 @@ export function createUninstallAction(
         logger.info("Reported uninstall to Tonic", { shopDomain: shop, appName: options.appName });
       } catch (error) {
         logger.error("Failed to report uninstall to Tonic", error, { shopDomain: shop, appName: options.appName });
+      }
+    }
+
+    // Report FREE plan to Tonic (since APP_SUBSCRIPTIONS_UPDATE doesn't fire on uninstall)
+    if (options?.tonicLink?.configured && options?.appName) {
+      try {
+        await options.tonicLink.reportPlanChange(shop, options.appName, "FREE", "CANCELLED");
+      } catch (error) {
+        logger.error("Failed to report FREE plan on uninstall", error, { shopDomain: shop });
+      }
+    }
+
+    // Billing cleanup (best-effort, before shop deletion)
+    if (ops.onBillingCleanup) {
+      try {
+        await ops.onBillingCleanup(shop);
+        logger.billing("uninstall_billing_cleanup", shop, "FREE");
+      } catch (error) {
+        logger.error("Billing cleanup failed", error, { shopDomain: shop });
       }
     }
 

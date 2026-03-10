@@ -44,7 +44,9 @@ export function createSubscriptionAction(authenticate, unauthenticated, ops, opt
             return new Response("Invalid payload: missing app_subscription", { status: 400 });
         }
         const { name, status, admin_graphql_api_id } = validatedPayload.app_subscription;
-        const plan = status === "ACTIVE" ? validatePlan(name) : "FREE";
+        const plan = (status === "ACTIVE" || status === "FROZEN" || status === "PENDING")
+            ? validatePlan(name)
+            : "FREE";
         try {
             await ops.upsertShopPlan(shop, {
                 plan,
