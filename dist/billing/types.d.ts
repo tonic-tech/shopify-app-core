@@ -43,6 +43,7 @@ export interface ShopifyBillingLineItem {
     currencyCode: string;
     interval: string;
     terms?: string;
+    cappedAmount?: number;
 }
 /** Shape matching @shopify/shopify-app-remix billing plan config */
 export interface ShopifyBillingPlan {
@@ -112,6 +113,8 @@ export interface UsageRecordInput {
     description: string;
     /** Idempotency key to prevent double-charging */
     idempotencyKey?: string;
+    /** Shop domain for logging context. Optional but recommended. */
+    shopDomain?: string;
 }
 export interface UsageRecordResult {
     success: boolean;

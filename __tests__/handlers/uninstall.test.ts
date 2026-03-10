@@ -204,4 +204,133 @@ describe("createUninstallAction", () => {
     expect(response.status).toBe(200);
     expect(mockOps.deleteShop).toHaveBeenCalled();
   });
+
+  // ─── onBillingCleanup ──────────────────────────────────────────────────
+
+  it("calls onBillingCleanup before deleting shop", async () => {
+    const callOrder: string[] = [];
+    const onBillingCleanup = vi.fn().mockImplementation(async () => { callOrder.push("onBillingCleanup"); });
+    mockOps.deleteShop.mockImplementation(async () => { callOrder.push("deleteShop"); });
+
+    const opsWithBilling = { ...mockOps, onBillingCleanup };
+    const action = createUninstallAction(mockAuth, opsWithBilling);
+    const response = await action({ request: new Request("http://localhost") });
+
+    expect(response.status).toBe(200);
+    expect(onBillingCleanup).toHaveBeenCalledWith("test-store.myshopify.com");
+    expect(callOrder).toEqual(["onBillingCleanup", "deleteShop"]);
+  });
+
+  it("continues with deletion even if onBillingCleanup throws", async () => {
+    const onBillingCleanup = vi.fn().mockRejectedValue(new Error("Billing cleanup failed"));
+    const opsWithBilling = { ...mockOps, onBillingCleanup };
+
+    const action = createUninstallAction(mockAuth, opsWithBilling);
+    const response = await action({ request: new Request("http://localhost") });
+
+    expect(response.status).toBe(200);
+    expect(mockOps.deleteShop).toHaveBeenCalled();
+    expect(mockOps.deleteSessions).toHaveBeenCalled();
+  });
+
+  it("does not call onBillingCleanup when not provided", async () => {
+    const action = createUninstallAction(mockAuth, mockOps);
+    const response = await action({ request: new Request("http://localhost") });
+
+    expect(response.status).toBe(200);
+    // No error thrown, deletion proceeds normally
+    expect(mockOps.deleteShop).toHaveBeenCalled();
+  });
+
+  // ─── reportPlanChange on uninstall ─────────────────────────────────────
+
+  it("reports FREE plan change to TonicLink on uninstall", async () => {
+    const mockTonicLink = {
+      configured: true,
+      reportUninstall: vi.fn().mockResolvedValue({ status: "updated" }),
+      reportPlanChange: vi.fn().mockResolvedValue({ status: "updated" }),
+    };
+
+    const action = createUninstallAction(mockAuth, mockOps, {
+      appName: "blocktonic",
+      tonicLink: mockTonicLink as any,
+    });
+
+    await action({ request: new Request("http://localhost") });
+
+    expect(mockTonicLink.reportPlanChange).toHaveBeenCalledWith(
+      "test-store.myshopify.com",
+      "blocktonic",
+      "FREE",
+      "CANCELLED"
+    );
+  });
+
+  it("continues with deletion even if reportPlanChange fails on uninstall", async () => {
+    const mockTonicLink = {
+      configured: true,
+      reportUninstall: vi.fn().mockResolvedValue({ status: "updated" }),
+      reportPlanChange: vi.fn().mockRejectedValue(new Error("API error")),
+    };
+
+    const action = createUninstallAction(mockAuth, mockOps, {
+      appName: "tracktonic",
+      tonicLink: mockTonicLink as any,
+    });
+
+    const response = await action({ request: new Request("http://localhost") });
+
+    expect(response.status).toBe(200);
+    expect(mockOps.deleteShop).toHaveBeenCalled();
+  });
+
+  it("does not report plan change when TonicLink is not configured", async () => {
+    const mockTonicLink = {
+      configured: false,
+      reportUninstall: vi.fn(),
+      reportPlanChange: vi.fn(),
+    };
+
+    const action = createUninstallAction(mockAuth, mockOps, {
+      appName: "flowtonic",
+      tonicLink: mockTonicLink as any,
+    });
+
+    await action({ request: new Request("http://localhost") });
+
+    expect(mockTonicLink.reportPlanChange).not.toHaveBeenCalled();
+  });
+
+  // ─── Execution order ──────────────────────────────────────────────────
+
+  it("executes in correct order: tonicLink -> billingCleanup -> onBeforeDelete -> deleteShop -> deleteSessions", async () => {
+    const callOrder: string[] = [];
+    const mockTonicLink = {
+      configured: true,
+      reportUninstall: vi.fn().mockImplementation(async () => { callOrder.push("reportUninstall"); }),
+      reportPlanChange: vi.fn().mockImplementation(async () => { callOrder.push("reportPlanChange"); }),
+    };
+    const onBillingCleanup = vi.fn().mockImplementation(async () => { callOrder.push("onBillingCleanup"); });
+    const onBeforeDelete = vi.fn().mockImplementation(async () => { callOrder.push("onBeforeDelete"); });
+    mockOps.deleteShop.mockImplementation(async () => { callOrder.push("deleteShop"); });
+    mockOps.deleteSessions.mockImplementation(async () => { callOrder.push("deleteSessions"); });
+
+    const opsWithBilling = { ...mockOps, onBillingCleanup };
+    const action = createUninstallAction(mockAuth, opsWithBilling, {
+      appName: "blocktonic",
+      tonicLink: mockTonicLink as any,
+      onBeforeDelete,
+    });
+
+    await action({ request: new Request("http://localhost") });
+
+    expect(callOrder).toEqual([
+      "reportUninstall",
+      "reportPlanChange",
+      "onBillingCleanup",
+      "onBeforeDelete",
+      "deleteShop",
+      "deleteSessions",
+    ]);
+  });
 });

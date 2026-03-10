@@ -140,4 +140,131 @@ describe("createUsageRecord", () => {
     const callArgs = admin.graphql.mock.calls[0];
     expect(callArgs[1].variables.price.currencyCode).toBe("USD");
   });
+
+  it("uses custom currencyCode when provided", async () => {
+    const admin = createMockAdmin({
+      data: {
+        appUsageRecordCreate: {
+          appUsageRecord: { id: "test" },
+          userErrors: [],
+        },
+      },
+    });
+
+    await createUsageRecord(admin, {
+      subscriptionLineItemId: "gid://shopify/AppSubscriptionLineItem/456",
+      amount: 1,
+      currencyCode: "EUR",
+      description: "test",
+    });
+
+    const callArgs = admin.graphql.mock.calls[0];
+    expect(callArgs[1].variables.price.currencyCode).toBe("EUR");
+  });
+
+  it("omits idempotencyKey from variables when not provided", async () => {
+    const admin = createMockAdmin({
+      data: {
+        appUsageRecordCreate: {
+          appUsageRecord: { id: "test" },
+          userErrors: [],
+        },
+      },
+    });
+
+    await createUsageRecord(admin, {
+      subscriptionLineItemId: "gid://shopify/AppSubscriptionLineItem/456",
+      amount: 1,
+      description: "test",
+    });
+
+    const callArgs = admin.graphql.mock.calls[0];
+    expect(callArgs[1].variables.idempotencyKey).toBeUndefined();
+  });
+
+  it("handles non-Error thrown exceptions", async () => {
+    const admin = {
+      graphql: vi.fn().mockRejectedValue("string error"),
+    };
+
+    const result = await createUsageRecord(admin, {
+      subscriptionLineItemId: "gid://shopify/AppSubscriptionLineItem/456",
+      amount: 1,
+      description: "test",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Unknown error");
+  });
+
+  it("returns error when response data is null", async () => {
+    const admin = createMockAdmin({
+      data: null,
+    });
+
+    const result = await createUsageRecord(admin, {
+      subscriptionLineItemId: "gid://shopify/AppSubscriptionLineItem/456",
+      amount: 1,
+      description: "test",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("No usage record ID returned");
+  });
+
+  it("returns error when response object is empty", async () => {
+    const admin = createMockAdmin({});
+
+    const result = await createUsageRecord(admin, {
+      subscriptionLineItemId: "gid://shopify/AppSubscriptionLineItem/456",
+      amount: 1,
+      description: "test",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("No usage record ID returned");
+  });
+
+  it("detects capped amount via 'exceed' keyword in error message", async () => {
+    const admin = createMockAdmin({
+      data: {
+        appUsageRecordCreate: {
+          appUsageRecord: null,
+          userErrors: [{ field: "price", message: "Amount would exceed the balance" }],
+        },
+      },
+    });
+
+    const result = await createUsageRecord(admin, {
+      subscriptionLineItemId: "gid://shopify/AppSubscriptionLineItem/456",
+      amount: 999,
+      description: "Large usage",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.cappedAmountExceeded).toBe(true);
+  });
+
+  it("concatenates multiple user errors into a single error string", async () => {
+    const admin = createMockAdmin({
+      data: {
+        appUsageRecordCreate: {
+          appUsageRecord: null,
+          userErrors: [
+            { field: "price", message: "Invalid amount" },
+            { field: "description", message: "Description required" },
+          ],
+        },
+      },
+    });
+
+    const result = await createUsageRecord(admin, {
+      subscriptionLineItemId: "gid://shopify/AppSubscriptionLineItem/456",
+      amount: -1,
+      description: "",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Invalid amount, Description required");
+  });
 });

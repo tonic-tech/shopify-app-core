@@ -65,7 +65,7 @@ export async function createUsageRecord(admin, input) {
             const isCapped = errors.some((e) => e.message.toLowerCase().includes("capped") ||
                 e.message.toLowerCase().includes("exceed"));
             if (isCapped) {
-                logger.billing("usage_capped", "unknown", "N/A", {
+                logger.billing("usage_capped", input.shopDomain ?? "unknown", "N/A", {
                     subscriptionLineItemId: input.subscriptionLineItemId,
                     amount: input.amount,
                 });
@@ -75,7 +75,14 @@ export async function createUsageRecord(admin, input) {
             return { success: false, error: errorMsg };
         }
         const recordId = result?.appUsageRecord?.id;
-        logger.billing("usage_recorded", "unknown", "N/A", {
+        if (!recordId) {
+            logger.error("Usage record creation returned no record ID", undefined, {
+                shopDomain: input.shopDomain ?? "unknown",
+                subscriptionLineItemId: input.subscriptionLineItemId,
+            });
+            return { success: false, error: "No usage record ID returned" };
+        }
+        logger.billing("usage_recorded", input.shopDomain ?? "unknown", "N/A", {
             usageRecordId: recordId,
             amount: input.amount,
             description: input.description,
@@ -85,6 +92,7 @@ export async function createUsageRecord(admin, input) {
     catch (error) {
         const msg = error instanceof Error ? error.message : "Unknown error";
         logger.error("Usage record creation threw", error, {
+            shopDomain: input.shopDomain ?? "unknown",
             subscriptionLineItemId: input.subscriptionLineItemId,
         });
         return { success: false, error: msg };

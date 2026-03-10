@@ -82,6 +82,7 @@ export function createBillingConfig(input) {
                 currencyCode: plan.currencyCode,
                 interval: plan.interval,
                 ...(plan.isUsageBased && plan.terms ? { terms: plan.terms } : {}),
+                ...(plan.isUsageBased && plan.cappedAmount != null ? { cappedAmount: plan.cappedAmount } : {}),
             };
             const shopifyPlan = {
                 lineItems: [lineItem],

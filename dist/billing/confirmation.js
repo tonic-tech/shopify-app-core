@@ -36,8 +36,10 @@ export function createChargeConfirmationLoader(authenticate, ops, options) {
             logger.error("Failed to check billing status", error, { shopDomain: shop });
             throw redirect(declinedUrl);
         }
-        if (billingStatus.hasActivePayment && billingStatus.appSubscriptions.length > 0) {
-            const subscription = billingStatus.appSubscriptions[0];
+        const activeSubscription = billingStatus.appSubscriptions.find(s => s.status === "ACTIVE")
+            ?? billingStatus.appSubscriptions[0];
+        if (billingStatus.hasActivePayment && activeSubscription) {
+            const subscription = activeSubscription;
             const plan = subscription.name;
             const subscriptionId = subscription.id;
             try {

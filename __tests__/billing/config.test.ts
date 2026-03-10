@@ -114,6 +114,22 @@ describe("createBillingConfig", () => {
       const shopify = usageBilling.toShopifyBilling();
       expect(shopify["METERED"].lineItems[0].terms).toBe("Per API call");
     });
+
+    it("includes cappedAmount in Shopify billing output for usage plans", () => {
+      const usageBilling = createBillingConfig({
+        METERED: { amount: 100, interval: "USAGE", cappedAmount: 500, terms: "Per API call" },
+      });
+      const shopify = usageBilling.toShopifyBilling();
+      expect(shopify["METERED"].lineItems[0].cappedAmount).toBe(500);
+    });
+
+    it("does not include cappedAmount for non-usage plans", () => {
+      const config = createBillingConfig({
+        PRO: { amount: 10, cappedAmount: 100 },
+      });
+      const shopify = config.toShopifyBilling();
+      expect(shopify["PRO"].lineItems[0].cappedAmount).toBeUndefined();
+    });
   });
 
   describe("custom FREE plan", () => {
@@ -123,6 +139,88 @@ describe("createBillingConfig", () => {
         PRO: { amount: 29.99, features: ["*"] },
       });
       expect(custom.plans.FREE.features).toEqual(["basic-blocks"]);
+    });
+
+    it("custom FREE plan is not included in planNames (paid plans only)", () => {
+      const custom = createBillingConfig({
+        FREE: { amount: 0, features: ["basic-blocks"] },
+        PRO: { amount: 29.99, features: ["*"] },
+      });
+      expect(custom.planNames).toEqual(["PRO"]);
+      expect(custom.planNames).not.toContain("FREE");
+    });
+  });
+
+  describe("annual billing interval", () => {
+    it("resolves ANNUAL interval correctly", () => {
+      const annual = createBillingConfig({
+        YEARLY: { amount: 99.99, interval: "ANNUAL", features: ["all"] },
+      });
+      expect(annual.plans.YEARLY.interval).toBe("ANNUAL");
+      expect(annual.plans.YEARLY.isUsageBased).toBe(false);
+    });
+
+    it("includes ANNUAL interval in Shopify billing output", () => {
+      const annual = createBillingConfig({
+        YEARLY: { amount: 99.99, interval: "ANNUAL" },
+      });
+      const shopify = annual.toShopifyBilling();
+      expect(shopify["YEARLY"].lineItems[0].interval).toBe("ANNUAL");
+    });
+  });
+
+  describe("free plan at amount 0 forces EVERY_30_DAYS", () => {
+    it("ignores provided interval when amount is 0", () => {
+      const config = createBillingConfig({
+        TRIAL: { amount: 0, interval: "ANNUAL" },
+      });
+      expect(config.plans.TRIAL.interval).toBe("EVERY_30_DAYS");
+    });
+
+    it("amount-0 plans are excluded from toShopifyBilling", () => {
+      const config = createBillingConfig({
+        BASIC: { amount: 0 },
+        PRO: { amount: 10 },
+      });
+      const shopify = config.toShopifyBilling();
+      expect(shopify["BASIC"]).toBeUndefined();
+      expect(shopify["PRO"]).toBeDefined();
+    });
+  });
+
+  describe("usage plan without terms", () => {
+    it("does not include terms property when not set", () => {
+      const config = createBillingConfig({
+        METERED: { amount: 50, interval: "USAGE" },
+      });
+      const shopify = config.toShopifyBilling();
+      expect(shopify["METERED"].lineItems[0].terms).toBeUndefined();
+    });
+  });
+
+  describe("non-usage plan with terms set (ignored)", () => {
+    it("does not include terms for non-usage plans in Shopify output", () => {
+      const config = createBillingConfig({
+        PRO: { amount: 10, interval: "EVERY_30_DAYS", terms: "should be ignored" },
+      });
+      const shopify = config.toShopifyBilling();
+      expect(shopify["PRO"].lineItems[0].terms).toBeUndefined();
+    });
+  });
+
+  describe("single plan config", () => {
+    it("works with a single paid plan", () => {
+      const config = createBillingConfig({
+        PRO: { amount: 15, features: ["all"] },
+      });
+      expect(config.planNames).toEqual(["PRO"]);
+      expect(config.allPlanNames).toHaveLength(2); // FREE + PRO
+    });
+  });
+
+  describe("hasFeature with unknown plan", () => {
+    it("falls back to FREE plan features for unknown plan name", () => {
+      expect(billing.hasFeature("NONEXISTENT", "blocks")).toBe(false);
     });
   });
 });

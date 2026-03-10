@@ -101,6 +101,7 @@ export function createBillingConfig<T extends string>(
         currencyCode: plan.currencyCode,
         interval: plan.interval,
         ...(plan.isUsageBased && plan.terms ? { terms: plan.terms } : {}),
+        ...(plan.isUsageBased && plan.cappedAmount != null ? { cappedAmount: plan.cappedAmount } : {}),
       };
 
       const shopifyPlan: ShopifyBillingPlan = {
